@@ -6,5 +6,5 @@ import com.fourinline.gameserver.domain.GameId
 import com.fourinline.gameserver.domain.GameSession
 
 class GameQueryService(private val storage: GameStorage) : GameQueryHandler {
-    override fun getGame(gameId: GameId): GameSession? = storage.getGameSession(gameId)
+    override suspend fun getGame(gameId: GameId): GameSession? = storage.getGameSession(gameId)
 }

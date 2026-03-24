@@ -1,12 +1,15 @@
 package com.fourinline.gameserver.application.port.out.persistence
 
-import com.fourinline.gameserver.application.port.out.persistence.SessionStatus
 import com.fourinline.gameserver.domain.Outcome
 import com.fourinline.gameserver.domain.PlayerSlot
-import java.util.UUID
+import org.springframework.data.annotation.Id
+import org.springframework.data.annotation.Version
+import org.springframework.data.relational.core.mapping.Table
+import java.util.*
 
+@Table("game_session")
 class GameSessionEntity(
-    val gameId: UUID,
+    @Id val gameId: UUID,
     val hostId: UUID,
     val guestId: UUID?,
     val status: SessionStatus,
@@ -15,5 +18,5 @@ class GameSessionEntity(
     val boardWidth: Int?,
     val boardHeight: Int?,
     val outcome: Outcome?,
-    val version: Int
+    @Version val version: Int
 )

@@ -1,5 +1,7 @@
 package com.fourinline.gameserver.adapter.`in`
 
+import com.fourinline.gameserver.adapter.`in`.JoinErrorMessage.GAME_ALREADY_FULL
+import com.fourinline.gameserver.adapter.`in`.JoinErrorMessage.PLAYER_CANNOT_JOIN_OWN
 import com.fourinline.gameserver.application.port.`in`.GameCommandHandler
 import com.fourinline.gameserver.application.port.`in`.GameQueryHandler
 import com.fourinline.gameserver.application.port.`in`.dto.command.CreateGameCommand
@@ -12,7 +14,7 @@ import com.fourinline.gameserver.domain.PlayerId
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder.fromCurrentRequest
+import org.springframework.web.util.UriComponentsBuilder
 import java.util.*
 
 @RestController
@@ -20,35 +22,34 @@ import java.util.*
 class GameController(private val commandHandler: GameCommandHandler, private val queryHandler: GameQueryHandler) {
 
     @PostMapping
-    fun createGame(@RequestHeader("X-Player-Id") playerId: UUID): ResponseEntity<GameSessionResponse> =
-        commandHandler.createGame(CreateGameCommand(PlayerId(playerId)))
-            .let {
-                val location = fromCurrentRequest()
-                    .path("/{id}")
-                    .buildAndExpand(it.gameId.value)
-                    .toUri()
-                ResponseEntity.created(location).body(GameSessionResponse(it.gameId.value))
-            }
+    suspend fun createGame(@RequestHeader("X-Player-Id") playerId: UUID, uriBuilder: UriComponentsBuilder): ResponseEntity<GameSessionResponse> {
+        val game = commandHandler.createGame(CreateGameCommand(PlayerId(playerId)))
+        val location = uriBuilder
+            .path("/{id}")
+            .buildAndExpand(game.gameId.value)
+            .toUri()
+        return ResponseEntity.created(location).body(game.toResponse())
+    }
 
     @PatchMapping("/{id}/players")
-    fun joinGameSession(
+    suspend fun joinGameSession(
         @RequestHeader("X-Player-Id") playerId: UUID,
         @PathVariable("id") gameId: UUID
     ): ResponseEntity<*> =
         when (val result = commandHandler.joinGameSession(JoinGameCommand(GameId(gameId), PlayerId(playerId)))) {
             is JoinGameResult.Success -> ResponseEntity.ok(result.session.toResponse())
             JoinGameResult.GameNotFound -> ResponseEntity.notFound().build<GameSessionResponse>()
-            JoinGameResult.AlreadyFull -> ResponseEntity.status(HttpStatus.CONFLICT).body("Game is already full")
-            JoinGameResult.CannotJoinOwnGame -> ResponseEntity.badRequest().body("Player cannot join its own game")
+            JoinGameResult.AlreadyFull -> ResponseEntity.status(HttpStatus.CONFLICT).body(GAME_ALREADY_FULL)
+            JoinGameResult.CannotJoinOwnGame -> ResponseEntity.badRequest().body(PLAYER_CANNOT_JOIN_OWN)
         }
 
     @GetMapping("/{id}")
-    fun getGame(@PathVariable id: UUID): ResponseEntity<GameSessionResponse> = queryHandler.getGame(GameId(id))
+    suspend fun getGame(@PathVariable id: UUID): ResponseEntity<GameSessionResponse> = queryHandler.getGame(GameId(id))
         ?.let { ResponseEntity.ok(it.toResponse()) }
         ?: ResponseEntity.notFound().build()
 
     @PostMapping("/{id}/moves")
-    fun move(
+    suspend fun move(
         @RequestHeader("X-Player-Id") playerId: UUID,
         @PathVariable("id") gameId: UUID,
         @RequestBody moveRequest: MoveRequest

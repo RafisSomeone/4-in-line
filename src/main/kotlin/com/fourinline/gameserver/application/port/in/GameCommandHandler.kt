@@ -8,7 +8,7 @@ import com.fourinline.gameserver.domain.MoveResult
 import com.fourinline.gameserver.domain.GameSession
 
 interface GameCommandHandler {
-    fun createGame(command: CreateGameCommand): GameSession
-    fun joinGameSession(command: JoinGameCommand): JoinGameResult
-    fun move(command: MoveCommand): MoveResult
+    suspend fun createGame(command: CreateGameCommand): GameSession
+    suspend fun joinGameSession(command: JoinGameCommand): JoinGameResult
+    suspend fun move(command: MoveCommand): MoveResult
 }

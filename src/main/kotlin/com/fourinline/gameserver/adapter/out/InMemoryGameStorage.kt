@@ -10,15 +10,15 @@ import java.util.concurrent.ConcurrentHashMap
 class InMemoryGameStorage: GameStorage {
     val database: MutableMap<GameId, GameSession> = ConcurrentHashMap()
 
-    override fun createGameSession(session: GameSessionDraft): GameSession = GameSession.WaitingForOpponent(
+    override suspend fun createGameSession(session: GameSessionDraft): GameSession = GameSession.WaitingForOpponent(
         GameId(UUID.randomUUID()), session.hostId
     ).also {
         database[it.gameId] = it
     }
 
-    override fun getGameSession(gameId: GameId): GameSession? = database[gameId]
+    override suspend fun getGameSession(gameId: GameId): GameSession? = database[gameId]
 
-    override fun save(session: GameSession) {
+    override suspend fun save(session: GameSession) {
         database[session.gameId] = session
     }
 }

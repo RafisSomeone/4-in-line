@@ -20,14 +20,19 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("com.h2database:h2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
-    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    runtimeOnly("io.r2dbc:r2dbc-h2")
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
+    testImplementation("io.projectreactor:reactor-test")
+
     testImplementation(platform("io.kotest:kotest-bom:6.1.4"))
     testImplementation("io.kotest:kotest-runner-junit6")
     testImplementation("io.kotest:kotest-assertions-core")
@@ -36,14 +41,15 @@ dependencies {
     testImplementation("io.mockk:mockk:1.13.12")
     testImplementation(kotlin("test"))
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 kotlin {
     compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
+        freeCompilerArgs.addAll(
+            "-Xjsr305=strict",
+            "-Xannotation-default-target=param-property"
+        )
     }
 }
 

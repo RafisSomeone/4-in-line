@@ -5,7 +5,7 @@ import com.fourinline.gameserver.domain.GameSession
 import com.fourinline.gameserver.domain.GameSessionDraft
 
 interface GameStorage {
-    fun createGameSession(session: GameSessionDraft): GameSession
-    fun getGameSession(gameId: GameId): GameSession?
-    fun save(session: GameSession)
+    suspend fun createGameSession(session: GameSessionDraft): GameSession
+    suspend fun getGameSession(gameId: GameId): GameSession?
+    suspend fun save(session: GameSession)
 }

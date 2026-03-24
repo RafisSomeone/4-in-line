@@ -12,28 +12,31 @@ import com.fourinline.gameserver.domain.MoveResult
 
 class GameCommandService(private val storage: GameStorage) : GameCommandHandler {
 
-    override fun createGame(command: CreateGameCommand): GameSession {
+    override suspend fun createGame(command: CreateGameCommand): GameSession {
         val session = storage.createGameSession(GameSessionDraft(command.hostId))
         return GameSession.WaitingForOpponent(session.gameId, session.hostId)
     }
 
-    override fun joinGameSession(command: JoinGameCommand): JoinGameResult {
+    override suspend fun joinGameSession(command: JoinGameCommand): JoinGameResult {
         val session = storage.getGameSession(command.gameId) ?: return JoinGameResult.GameNotFound
 
-        return when(session) {
-            is GameSession.WaitingForOpponent -> session.join(command.guestId)
-            is GameSession.InProgress -> JoinGameResult.AlreadyFull
-            is GameSession.Finished -> JoinGameResult.AlreadyFull
+        if (session !is GameSession.WaitingForOpponent) return JoinGameResult.AlreadyFull
+
+        return session.join(command.guestId).also { result ->
+            if (result is JoinGameResult.Success) storage.save(result.session)
         }
     }
 
-    override fun move(command: MoveCommand): MoveResult {
+    override suspend fun move(command: MoveCommand): MoveResult {
         val session = storage.getGameSession(command.gameId) ?: return MoveResult.GameNotFound
 
-        return when(session) {
-            is GameSession.InProgress -> session.move(command.playerId, command.columnIndex)
+        if (session !is GameSession.InProgress) return when (session) {
             is GameSession.WaitingForOpponent -> MoveResult.IllegalMove(MoveResult.Reason.WAITING_FOR_OPPONENT)
             is GameSession.Finished -> MoveResult.IllegalMove(MoveResult.Reason.GAME_FINISHED)
+        }
+
+        return session.move(command.playerId, command.columnIndex).also { result ->
+            if (result is MoveResult.Success) storage.save(result.session)
         }
     }
 }
